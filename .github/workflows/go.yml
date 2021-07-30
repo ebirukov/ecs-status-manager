@@ -16,7 +16,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v2
       with:
-        go-version: 1.16
+        go-version: 1.17
         
     - name: Install deps
       run: go get -u github.com/aws/aws-sdk-go && go get -u github.com/docker/engine && go get -u github.com/docker/docker/client && go get -u github.com/docker/engine-api && go get -u github.com/docker/engine-api/client && go get -u github.com/docker/distribution/ && go get -u github.com/docker/go-connections && go get -u golang.org/x/net/context && go get -u github.com/docker/go-units
