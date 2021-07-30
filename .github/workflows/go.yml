@@ -22,4 +22,4 @@ jobs:
       run: go get -u github.com/aws/aws-sdk-go && go get -u github.com/docker/engine && go get -u github.com/docker/docker/client && go get -u github.com/docker/engine-api && go get -u github.com/docker/distribution/ && go get -u github.com/docker/go-connections && go get -u github.com/docker/go-units
 
     - name: Build
-      run: CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o ecs-status-manager -ldflags '-w -s' ecs-status-manager.go 
+      run: CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o ecs-status-manager -ldflags '-w -s' ./main/ecs-status-manager.go 
