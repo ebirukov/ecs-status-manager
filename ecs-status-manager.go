@@ -1,47 +1,47 @@
 package main
 
 import (
+	"encoding/json"
+	"errors"
+	"flag"
 	fmt "fmt"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/sns"
 	"github.com/docker/engine-api/client"
 	"github.com/docker/engine-api/types"
 	"github.com/docker/engine-api/types/events"
-	"golang.org/x/net/context"
-	"encoding/json"
-	"log"
-	"io"
-	"github.com/aws/aws-sdk-go/service/sns"
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"net/http"
-	"time"
-	"strings"
-	"errors"
 	"github.com/docker/engine-api/types/filters"
-	"strconv"
-	"flag"
+	"golang.org/x/net/context"
+	"io"
+	"log"
+	"net/http"
 	"os"
+	"strconv"
+	"strings"
+	"time"
 )
 
 type TaskInfo struct {
-	Arn string
+	Arn           string
 	DesiredStatus string
-	KnownStatus string
-	Family string
-	Containers []struct {
-		DockerId string
+	KnownStatus   string
+	Family        string
+	Containers    []struct {
+		DockerId   string
 		DockerName string
-		Name string
+		Name       string
 	}
 }
 
 type ECSContainerInfo struct {
-	Id string `json:"id,omitempty"`
-	Status string `json:"status,omitempty"`
-	Cluster string `json:"cluster,omitempty"`
-	Image string `json:"image,omitempty"`
-	Task string `json:"task,omitempty"`
-	ExitCode int `json:"exitCode,string,omitempty"`
-	Time string `json:"time,omitempty"`
+	Id            string `json:"id,omitempty"`
+	Status        string `json:"status,omitempty"`
+	Cluster       string `json:"cluster,omitempty"`
+	Image         string `json:"image,omitempty"`
+	Task          string `json:"task,omitempty"`
+	ExitCode      int    `json:"exitCode,string,omitempty"`
+	Time          string `json:"time,omitempty"`
 	FailureReason string `json:"failureReason,omitempty"`
 }
 
@@ -119,7 +119,7 @@ func main() {
 				log.Println(event.ID, err)
 				continue
 			}
-			containerInfo := ECSContainerInfo{Id: strings.Split(task.Arn, "/")[1], Status: calcStatus(event.Action), Image: event.From, Task: task.Containers[0].DockerName, Cluster:*clusterName}
+			containerInfo := ECSContainerInfo{Id: strings.Split(task.Arn, "/")[1], Status: calcStatus(event.Action), Image: event.From, Task: task.Containers[0].DockerName, Cluster: *clusterName}
 			if event.Action == "die" || event.Action == "stop" || event.Action == "kill" {
 				containerInfo.fillExitedContainerInfo(cli, event.ID)
 			}
@@ -148,7 +148,7 @@ func calcStatus(action string) string {
 	return strings.ToUpper(action)
 }
 
-func (info *ECSContainerInfo) fillExitedContainerInfo(cli *client.Client, id string) (error) {
+func (info *ECSContainerInfo) fillExitedContainerInfo(cli *client.Client, id string) error {
 	containerJSON, err := cli.ContainerInspect(context.Background(), id)
 	info.ExitCode = containerJSON.State.ExitCode
 	if containerJSON.State.ExitCode != 0 {
@@ -176,13 +176,13 @@ func calcTimeInSec(startedAt string, finishedAt string) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	return int(end.Unix() - start.Unix()), nil;
+	return int(end.Unix() - start.Unix()), nil
 }
 
 func getTaskInfo(id string) (TaskInfo, error) {
 	if _, ok := tasks[id]; !ok {
 		task := new(TaskInfo)
-		err := readFromJson("http://localhost:51678/v1/tasks?dockerid=" + id, task)
+		err := readFromJson("http://localhost:51678/v1/tasks?dockerid="+id, task)
 		if err != nil {
 			return *task, err
 		}
@@ -194,7 +194,7 @@ func getTaskInfo(id string) (TaskInfo, error) {
 	return tasks[id], nil
 }
 
-func readFromJson(url string, target interface{}) (error) {
+func readFromJson(url string, target interface{}) error {
 	r, err := httpClient.Get(url)
 	if err != nil {
 		return err
@@ -210,8 +210,8 @@ func publish(message *ECSContainerInfo, svc *sns.SNS, arn string) (*sns.PublishO
 		return nil, err
 	}
 	params := &sns.PublishInput{
-		Message: aws.String(string(b)), // This is the message itself (can be XML / JSON / Text - anything you want)
-		TopicArn: aws.String(arn),  //Get this from the Topic in the AWS console.
+		Message:  aws.String(string(b)), // This is the message itself (can be XML / JSON / Text - anything you want)
+		TopicArn: aws.String(arn),       //Get this from the Topic in the AWS console.
 	}
 	return svc.Publish(params)
 }
